@@ -1,4 +1,5 @@
-import { User } from "./user.model"
+import bcrypt from "bcryptjs";
+import User from "./user.model"
 import { UserDTO } from "./user.types";
 
 export const createUser = async (data: UserDTO) => {
@@ -8,5 +9,8 @@ export const createUser = async (data: UserDTO) => {
     throw new Error("User already exists");
   }
 
-  return await User.create(data);
+  const salt = bcrypt.genSaltSync(10);
+  const password = bcrypt.hashSync(data.password, salt);
+
+  return await User.create({ ...data, password });
 }
