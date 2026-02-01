@@ -3,5 +3,6 @@ declare namespace NodeJS {
     PORT: string;
     MONGO_URI: string;
     NODE_ENV: "development" | "production";
+    NEXTAUTH_SECRET: string;
   }
 }

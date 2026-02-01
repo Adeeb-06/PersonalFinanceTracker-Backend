@@ -12,6 +12,12 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
+export const userExists = async (req: Request, res: Response) => {
+  const { email } = req.params;
+  const user = await User.findOne({ email });
+  res.status(200).json(!!user);
+}
+
 
 export const getUser = async (req: Request, res: Response) => {
   try {

@@ -12,5 +12,5 @@ export const createUser = async (data: UserDTO) => {
   const salt = bcrypt.genSaltSync(10);
   const password = bcrypt.hashSync(data.password, salt);
 
-  return await User.create({ ...data, password });
+  return await User.create({ ...data, password , balance: 0});
 }
