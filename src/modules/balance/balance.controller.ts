@@ -49,3 +49,37 @@ export const addBalance = async (req: Request, res: Response) => {
     }
   }
 };
+
+export const getBalanceData = async (req: Request, res: Response) => {
+  try {
+    const { userEmail } = req.params;
+    const pages = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (pages - 1) * limit;
+    console.log("User Email:", userEmail);
+
+    const [balanceData, total] = await Promise.all([
+      BalanceModel.find({ userEmail })
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BalanceModel.countDocuments({ userEmail }),
+    ]);
+
+    console.log(balanceData ,"balance")
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.status(200).json({
+      data: balanceData,
+      pagination: {
+        currentPage: pages,
+        totalPages,
+        pageSize: limit,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

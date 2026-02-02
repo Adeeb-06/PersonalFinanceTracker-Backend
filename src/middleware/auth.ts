@@ -9,12 +9,10 @@ interface AuthenticatedRequest extends Request {
 
 export const verifyAuth = async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
 
-    console.log("Incoming cookies:", req.cookies);
+ 
 
    try {
      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-
-     console.log("Decoded token:", token);
 
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized' });
