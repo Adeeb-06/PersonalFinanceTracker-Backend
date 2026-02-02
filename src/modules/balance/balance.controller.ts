@@ -50,7 +50,7 @@ export const addBalance = async (req: Request, res: Response) => {
   }
 };
 
-export const getBalanceData = async (req: Request, res: Response) => {
+export const getIncomeData = async (req: Request, res: Response) => {
   try {
     const { userEmail } = req.params;
     const pages = parseInt(req.query.page as string) || 1;
@@ -58,16 +58,35 @@ export const getBalanceData = async (req: Request, res: Response) => {
     const skip = (pages - 1) * limit;
     console.log("User Email:", userEmail);
 
+    const { from, to } = req.query;
+
+    const query: any = { userEmail , type: "income" };
+
+    if (from) {
+      const startDate = new Date(from as string);
+      startDate.setHours(0, 0, 0, 0);
+
+      query.date = { ...query.date, $gte: startDate };
+    }
+
+    if (to) {
+      const endDate = new Date(to as string);
+      endDate.setHours(23, 59, 59, 999);
+
+      query.date = { ...query.date, $lte: endDate };
+    }
+
     const [balanceData, total] = await Promise.all([
-      BalanceModel.find({ userEmail })
-        .sort({ date: -1 })
+      BalanceModel.find(query)
+        .select("-type")
+        .sort({ date: 1, time: 1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       BalanceModel.countDocuments({ userEmail }),
     ]);
 
-    console.log(balanceData ,"balance")
+    console.log(balanceData, "balance");
 
     const totalPages = Math.ceil(total / limit);
 
