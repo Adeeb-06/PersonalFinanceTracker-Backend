@@ -85,9 +85,6 @@ export const getIncomeData = async (req: Request, res: Response) => {
         .lean(),
       BalanceModel.countDocuments({ userEmail }),
     ]);
-
-    console.log(balanceData, "balance");
-
     const totalPages = Math.ceil(total / limit);
 
     res.status(200).json({

@@ -8,6 +8,7 @@ dotenv.config();
 
 import { connectToDatabase } from "./config/mongodb";
 import balanceRoute from "./modules/balance/balance.route";
+import expenseRoute from "./modules/expense/expense.routes";
 
 connectToDatabase();
 
@@ -34,6 +35,7 @@ app.get("/", (req: any, res: any) => {
 
 app.use("/api/users", userRouter);
 app.use("/api/balance", balanceRoute);
+app.use("/api/expense", expenseRoute);
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
