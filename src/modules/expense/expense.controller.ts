@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ExpenseModel from "./expense.model";
 import User from "../user/user.model";
+import BudgetModel from "../budget/budget.model";
 
 interface ExpenseReq extends Request {
     body: {
@@ -19,6 +20,13 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
     if(!userEmail || !amount || !date || !category || !description) {
         return res.status(400).json({ message: "Required fields are missing" });
     }
+    const dateObj = new Date(date);
+
+    const month = dateObj.getMonth() + 1
+    const year = dateObj.getFullYear()
+    console.log(month , year , "month")
+
+    const dateString = `${month}/${year}`
 
     try {
         const expense = await ExpenseModel.create({
@@ -30,6 +38,21 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
             description,
         });
         const user = await User.findOne({ email: userEmail });
+
+        const budgetDeduction  = await BudgetModel.findOne({ userEmail, month: dateString });
+        if(budgetDeduction){
+            await BudgetModel.findOneAndUpdate(
+                { userEmail, month: dateString },
+                {
+                    $inc: {
+                        spent: amount,
+                        remaining: budgetDeduction.amount-amount,
+                    },
+                },
+            );
+        } 
+
+
 
         if(user.balance < amount){
             return res.status(400).json({ message: "Insufficient balance" });
@@ -77,6 +100,32 @@ export const getExpense = async (req: Request, res: Response) => {
                 pageSize: limit,
             },
         });
+    } catch (error) {
+        res.status(500).json({ message: "Error getting expense data" });
+    }
+};
+
+
+export const getTotalExpenseByMonth = async (req: Request, res: Response) => {
+    const { userEmail } = req.params;
+    const { month } = req.query;
+
+    try {
+        const expenseData = await ExpenseModel.findOne({ userEmail, month });
+        const result = await ExpenseModel.aggregate([
+            {
+                $match: {
+                    userEmail,
+                    month,
+                },
+                $group: {
+                    _id: null,
+                    total: {
+                        $sum: "$amount",
+                    },
+                }
+            }
+        ])
     } catch (error) {
         res.status(500).json({ message: "Error getting expense data" });
     }

@@ -9,9 +9,14 @@ export const addBudget = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Required fields are missing" });
         }
 
+        const monthName = (month: string) => {
+            const date = new Date(month);
+            return `${date.getMonth() + 1}/${date.getFullYear()}`;
+        };
+
         const newBudget = new BudgetModel({
             userEmail,
-            month,
+            month: monthName(month),
             amount,
         });
 
@@ -56,3 +61,16 @@ export const getBudget = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Error getting budget data" });
     }
 };  
+
+
+export const getBudgetByMonth = async (req: Request, res: Response) => {
+    const { userEmail } = req.params;
+    const { month } = req.query;
+
+    try {
+        const budgetData = await BudgetModel.findOne({ userEmail, month });
+        res.status(200).json(budgetData);
+    } catch (error) {
+        res.status(500).json({ message: "Error getting budget data" });
+    }
+};
