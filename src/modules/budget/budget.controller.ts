@@ -66,7 +66,6 @@ export const getBudget = async (req: Request, res: Response) => {
 export const getBudgetByMonth = async (req: Request, res: Response) => {
     const { userEmail } = req.params;
     const { month } = req.query;
-
     try {
         const budgetData = await BudgetModel.findOne({ userEmail, month });
         res.status(200).json(budgetData);
