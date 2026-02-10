@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import { CategoryService } from "./categories.services";
+import CategoryModel from "./categories.model";
+import ExpenseModel from "../expense/expense.model";
+import { ICategory } from "./category.type";
+import BalanceModel from "../balance/balance.model";
 
 const createCategory = async (req: Request, res: Response) => {
   try {
@@ -26,7 +30,7 @@ const getAllCategories = async (req: Request, res: Response) => {
   try {
     const { userEmail } = req.params;
 
-    if(Array.isArray(userEmail)){
+    if (Array.isArray(userEmail)) {
       return res.status(400).json({
         success: false,
         message: "User email is required",
@@ -46,12 +50,11 @@ const getAllCategories = async (req: Request, res: Response) => {
   }
 };
 
-
 const getIncomeCategories = async (req: Request, res: Response) => {
   try {
     const { userEmail } = req.params;
 
-    if(Array.isArray(userEmail)){
+    if (Array.isArray(userEmail)) {
       return res.status(400).json({
         success: false,
         message: "User email is required",
@@ -59,7 +62,7 @@ const getIncomeCategories = async (req: Request, res: Response) => {
     }
 
     const categories = await CategoryService.getIncomeCategories(userEmail);
-    console.log(categories)
+    console.log(categories);
     res.status(200).json({
       success: true,
       message: "Income categories retrieved successfully",
@@ -77,7 +80,7 @@ const getExpenseCategories = async (req: Request, res: Response) => {
   try {
     const { userEmail } = req.params;
 
-    if(Array.isArray(userEmail)){
+    if (Array.isArray(userEmail)) {
       return res.status(400).json({
         success: false,
         message: "User email is required",
@@ -96,11 +99,165 @@ const getExpenseCategories = async (req: Request, res: Response) => {
       message: error.message || "Failed to retrieve expense categories",
     });
   }
-};  
+};
+
+const getCategoryAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { userEmail } = req.params;
+    const { category } = req.query;
+    const { month, year } = req.query;
+
+    if (Array.isArray(userEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "User email is required",
+      });
+    }
+
+    const startDate = new Date(Number(year), Number(month) - 1, 1);
+    const endDate = new Date(Number(year), Number(month), 0);
+
+    const lastMonthStartDate = new Date(Number(year), Number(month) - 2, 1);
+    const lastMonthEndDate = new Date(Number(year), Number(month) - 1, 0);
+
+    const categoryData = await CategoryModel.findOne<ICategory>({
+      userEmail,
+      name: { $regex: new RegExp(`^${category}$`, "i") },
+    });
+
+    const analytics = {
+      totalAmount: 0,
+      totalTransactions: 0,
+      lastMonthAmount: 0,
+      lastMonthTransactions: 0,
+    };
+    if (!categoryData) {
+      throw new Error("Category not found");
+    }
+
+    console.log(categoryData);
+
+    for (const transaction of categoryData?.transactions) {
+      let transactionData;
+
+      if (categoryData.type === "expense") {
+        transactionData = await ExpenseModel.findById(transaction);
+        if (!transactionData) {
+          transactionData = await BalanceModel.findById(transaction);
+        }
+      } else {
+        transactionData = await BalanceModel.findById(transaction);
+        if (!transactionData) {
+          transactionData = await ExpenseModel.findById(transaction);
+        }
+      }
+
+      if (
+        transactionData &&
+        transactionData.date >= startDate &&
+        transactionData.date <= endDate
+      ) {
+        analytics.totalAmount += transactionData.amount;
+        analytics.totalTransactions += 1;
+      }
+      if (
+        transactionData &&
+        transactionData.date >= lastMonthStartDate &&
+        transactionData.date <= lastMonthEndDate
+      ) {
+        analytics.lastMonthAmount += transactionData.amount;
+        analytics.lastMonthTransactions += 1;
+      }
+    }
+
+    let otherCategoriesAmount = 0;
+    let otherCategoriesTransactions = 0;
+
+    const otherCategories = await CategoryModel.find({
+      userEmail,
+      type: categoryData.type,
+      name: { $ne: category },
+    });
+
+    for(const otherCategory of otherCategories){
+      let transactionData;
+
+      if (otherCategory.type === "expense") {
+        transactionData = await ExpenseModel.findById(otherCategory.transactions);
+        if (!transactionData) {
+          transactionData = await BalanceModel.findById(otherCategory.transactions);
+        }
+      } else {
+        transactionData = await BalanceModel.findById( otherCategory.transactions);
+        if (!transactionData) {
+          transactionData = await ExpenseModel.findById(otherCategory.transactions);
+        }
+      }
+
+      if(
+        transactionData &&
+        transactionData.date >= startDate &&
+        transactionData.date <= endDate
+      ){
+        otherCategoriesAmount += transactionData.amount;
+        otherCategoriesTransactions += 1;
+      }
+    }
+
+
+    const percentageChange =
+      ((analytics.totalAmount - analytics.lastMonthAmount) /
+        analytics.lastMonthAmount) *
+      100;
+
+    const averageAmount = analytics.totalAmount / analytics.totalTransactions;
+
+    const pieData = [
+      {
+        name: categoryData.name,
+        value: analytics.totalAmount,
+      },
+      {
+        name: "Others",
+        value: otherCategoriesAmount,
+      },
+    ];
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    res.status(200).json({
+      success: true,
+      message: "Category analytics retrieved successfully",
+      data: { ...analytics, percentageChange, averageAmount, pieData },
+      month: monthNames[Number(month) - 1],
+      monthNumber: Number(month),
+    });
+  } catch (error: any) {
+    console.log(error);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to retrieve category analytics",
+    });
+  }
+};
 
 export const CategoryController = {
   createCategory,
   getAllCategories,
   getIncomeCategories,
   getExpenseCategories,
+  getCategoryAnalytics,
 };
