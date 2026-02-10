@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import ExpenseModel from "./expense.model";
 import User from "../user/user.model";
 import BudgetModel from "../budget/budget.model";
+import CategoryModel from "../categories/categories.model";
 
 interface ExpenseReq extends Request {
   body: {
@@ -75,6 +76,15 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       {
         $inc: {
           balance: -amount,
+        },
+      },
+    );
+
+    await CategoryModel.findOneAndUpdate(
+      { name: category, userEmail },
+      {
+        $push: {
+          transactions: expense._id,
         },
       },
     );

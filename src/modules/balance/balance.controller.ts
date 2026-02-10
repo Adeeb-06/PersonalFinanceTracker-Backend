@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import BalanceModel from "./balance.model";
 import { BalanceDTO } from "./balance.types";
 import User from "../user/user.model";
+import CategoryModel from "../categories/categories.model";
 
 export const addBalance = async (req: Request, res: Response) => {
   try {
@@ -34,6 +35,15 @@ export const addBalance = async (req: Request, res: Response) => {
       {
         $inc: {
           balance: amount,
+        },
+      },
+    );
+
+    await CategoryModel.findOneAndUpdate(
+      { name: category, userEmail },
+      {
+        $push: {
+          transactions: newBalance._id,
         },
       },
     );
