@@ -10,12 +10,12 @@ import { connectToDatabase } from "./config/mongodb";
 import balanceRoute from "./modules/balance/balance.route";
 import expenseRoute from "./modules/expense/expense.routes";
 import budgetRoute from "./modules/budget/budget.route";
+import { CategoryRoutes } from "./modules/categories/categories.routes";
 
 connectToDatabase();
 
 const app = express();
 const port: Number = 9000;
-
 
 app.use(cookiesParser());
 
@@ -38,6 +38,7 @@ app.use("/api/users", userRouter);
 app.use("/api/balance", balanceRoute);
 app.use("/api/expense", expenseRoute);
 app.use("/api/budget", budgetRoute);
+app.use("/api/categories", CategoryRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

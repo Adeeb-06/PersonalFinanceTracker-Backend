@@ -43,7 +43,8 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       userEmail,
       month: dateString,
     });
-    if (budgetDeduction) {
+
+    if(budgetDeduction) {
       await BudgetModel.findOneAndUpdate(
         { userEmail, month: dateString },
         {
@@ -58,9 +59,11 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       );
     }
 
-    if(budgetDeduction.remaining < 0){
-      budgetDeduction.remaining = 0
-      await budgetDeduction.save()
+    if(budgetDeduction){
+      if(budgetDeduction.remaining < 0){
+        budgetDeduction.remaining = 0
+        await budgetDeduction.save()
+      }
     }
 
     if (user.balance < amount) {
@@ -78,6 +81,7 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
 
     res.status(201).json({ message: "Expense added successfully" });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Error adding expense" });
   }
 };
@@ -147,7 +151,7 @@ export const getTotalExpenseByMonth = async (req: Request, res: Response) => {
       },
     ]);
 
-    const total = result[0].total;
+    const totalExpense = result[0].total;
     const monthNames = [
       "January",
       "February",
@@ -164,7 +168,7 @@ export const getTotalExpenseByMonth = async (req: Request, res: Response) => {
     ];
 
     res.status(200).json({
-      total,
+      total:totalExpense,
       monthNames: monthNames[monthNum - 1],
       monthNumber: monthNum,
     });
