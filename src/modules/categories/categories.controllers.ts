@@ -179,31 +179,32 @@ const getCategoryAnalytics = async (req: Request, res: Response) => {
       name: { $ne: category },
     });
 
-    for(const otherCategory of otherCategories){
+    for (const otherCategory of otherCategories) {
       let transactionData;
 
-      if (otherCategory.type === "expense") {
-        transactionData = await ExpenseModel.findById(otherCategory.transactions);
-        if (!transactionData) {
-          transactionData = await BalanceModel.findById(otherCategory.transactions);
+      for (const transaction of otherCategory.transactions) {
+        if (otherCategory.type === "expense") {
+          transactionData = await ExpenseModel.findById(transaction);
+          if (!transactionData) {
+            transactionData = await BalanceModel.findById(transaction);
+          }
+        } else {
+          transactionData = await BalanceModel.findById(transaction);
+          if (!transactionData) {
+            transactionData = await ExpenseModel.findById(transaction);
+          }
         }
-      } else {
-        transactionData = await BalanceModel.findById( otherCategory.transactions);
-        if (!transactionData) {
-          transactionData = await ExpenseModel.findById(otherCategory.transactions);
-        }
-      }
 
-      if(
-        transactionData &&
-        transactionData.date >= startDate &&
-        transactionData.date <= endDate
-      ){
-        otherCategoriesAmount += transactionData.amount;
-        otherCategoriesTransactions += 1;
+        if (
+          transactionData &&
+          transactionData.date >= startDate &&
+          transactionData.date <= endDate
+        ) {
+          otherCategoriesAmount += transactionData.amount;
+          otherCategoriesTransactions += 1;
+        }
       }
     }
-
 
     const percentageChange =
       ((analytics.totalAmount - analytics.lastMonthAmount) /
@@ -211,6 +212,11 @@ const getCategoryAnalytics = async (req: Request, res: Response) => {
       100;
 
     const averageAmount = analytics.totalAmount / analytics.totalTransactions;
+
+    const percentageOfTotal =
+      (analytics.totalAmount /
+        (analytics.totalAmount + otherCategoriesAmount)) *
+      100;
 
     const pieData = [
       {
@@ -241,7 +247,13 @@ const getCategoryAnalytics = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       message: "Category analytics retrieved successfully",
-      data: { ...analytics, percentageChange, averageAmount, pieData },
+      data: {
+        ...analytics,
+        percentageChange,
+        averageAmount,
+        pieData,
+        percentageOfTotal,
+      },
       month: monthNames[Number(month) - 1],
       monthNumber: Number(month),
     });
@@ -254,10 +266,33 @@ const getCategoryAnalytics = async (req: Request, res: Response) => {
   }
 };
 
+const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (Array.isArray(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Category id is required",
+      });
+    }
+    await CategoryService.deleteCategory(id);
+    res.status(200).json({
+      success: true,
+      message: "Category deleted successfully",
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Failed to delete category",
+    });
+  }
+};
+
 export const CategoryController = {
   createCategory,
   getAllCategories,
   getIncomeCategories,
   getExpenseCategories,
   getCategoryAnalytics,
+  deleteCategory,
 };

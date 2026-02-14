@@ -9,5 +9,6 @@ router.get("/:userEmail", verifyAuth, CategoryController.getAllCategories);
 router.get("/income/:userEmail", verifyAuth, CategoryController.getIncomeCategories);
 router.get("/expense/:userEmail", verifyAuth, CategoryController.getExpenseCategories);
 router.get("/analytics/:userEmail", verifyAuth, CategoryController.getCategoryAnalytics);
+router.delete("/:id", verifyAuth, CategoryController.deleteCategory);
 
 export const CategoryRoutes = router;
