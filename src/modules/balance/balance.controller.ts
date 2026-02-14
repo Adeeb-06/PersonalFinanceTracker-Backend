@@ -70,7 +70,7 @@ export const getIncomeData = async (req: Request, res: Response) => {
 
     const { from, to } = req.query;
 
-    const query: any = { userEmail , type: "income" };
+    const query: any = { userEmail, type: "income" };
 
     if (from) {
       const startDate = new Date(from as string);
@@ -106,6 +106,27 @@ export const getIncomeData = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteIncome = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const income = await BalanceModel.findById(id);
+    const category = await CategoryModel.find({
+      name: income?.category,
+      userEmail: income?.userEmail,
+    });
+    await BalanceModel.findByIdAndDelete(id);
+    await CategoryModel.updateOne(
+      { _id: category[0]._id },
+      { $pull: { transactions: id } },
+    );
+    await User.updateOne({ _id: id }, { $inc: { balance: -income?.amount } });
+    res.status(200).json({ message: "Income deleted successfully" });
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
