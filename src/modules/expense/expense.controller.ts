@@ -59,10 +59,10 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       );
     }
 
-    if(budgetDeduction){
-      if(budgetDeduction.remaining < 0){
-        budgetDeduction.remaining = 0
-        await budgetDeduction.save()
+    if (budgetDeduction) {
+      if (budgetDeduction.remaining < 0) {
+        budgetDeduction.remaining = 0;
+        await budgetDeduction.save();
       }
     }
 
@@ -246,11 +246,64 @@ export const updateExpense = async (req: Request, res: Response) => {
       },
     );
 
-
     await expense.save();
     res.status(201).json({ message: "Expense updated successfully" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error updating expense" });
+  }
+};
+
+export const deletExpense = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const expense = await ExpenseModel.findById(id);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    console.log(expense, "delete");
+
+    const dateObj = new Date(expense.date);
+    const month = dateObj.getMonth() + 1;
+    const year = dateObj.getFullYear();
+    const dateString = `${month}/${year}`;
+    console.log(dateString, "date");
+    console.log(expense.userEmail, "user");
+
+    const budgetDeduction = await BudgetModel.findOne({
+      userEmail: expense.userEmail,
+      month: dateString,
+    });
+
+
+    if (budgetDeduction) {
+      await BudgetModel.findOneAndUpdate(
+        { userEmail: expense.userEmail, month: dateString },
+        {
+          $inc: {
+            spent: -expense.amount,
+          },
+          $set: {
+            remaining: budgetDeduction.amount + expense.amount,
+          },
+        },
+      );
+    }
+
+    await User.findOneAndUpdate(
+      { email: expense.userEmail },
+      {
+        $inc: {
+          balance: expense.amount,
+        },
+      },
+    );
+
+    await expense.deleteOne();
+    res.status(200).json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error deleting expense" });
   }
 };
