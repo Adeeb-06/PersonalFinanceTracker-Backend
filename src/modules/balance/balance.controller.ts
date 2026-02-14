@@ -114,17 +114,83 @@ export const deleteIncome = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const income = await BalanceModel.findById(id);
-    const category = await CategoryModel.find({
+    const category = await CategoryModel.findOne({
       name: income?.category,
       userEmail: income?.userEmail,
     });
     await BalanceModel.findByIdAndDelete(id);
     await CategoryModel.updateOne(
-      { _id: category[0]._id },
+      { _id: category?._id },
       { $pull: { transactions: id } },
     );
-    await User.updateOne({ _id: id }, { $inc: { balance: -income?.amount } });
+    await User.updateOne(
+      { email: income?.userEmail },
+      { $inc: { balance: -income?.amount } },
+    );
     res.status(200).json({ message: "Income deleted successfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getIncomeById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log(id, "id");
+    const income = await BalanceModel.findById(id);
+    if (!income) {
+      return res.status(404).json({ error: "Income not found" });
+    }
+    console.log(income, "income");
+    console.log(id, "id");
+    res.status(200).json(income);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const updateIncome = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { amount, category, description, date, time } = req.body;
+    const income = await BalanceModel.findById(id);
+    const categoryData = await CategoryModel.find({
+      name: income?.category,
+      userEmail: income?.userEmail,
+    });
+    await BalanceModel.findByIdAndUpdate(id, {
+      amount,
+      category,
+      description,
+      date,
+      time,
+    });
+
+    await CategoryModel.updateOne(
+      { name: category, userEmail: income?.userEmail, type: "income" },
+      {
+        $push: {
+          transactions: id,
+        },
+      },
+    );
+
+    if (income?.amount !== amount) {
+      if (income?.amount < amount) {
+        await User.updateOne(
+          { email: income?.userEmail },
+          { $inc: { balance: amount - income?.amount } },
+        );
+      } else {
+        await User.updateOne(
+          { email: income?.userEmail },
+          { $inc: { balance: -(income?.amount - amount) } },
+        );
+      }
+    }
+    res.status(200).json({ message: "Income updated successfully" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal server error" });
