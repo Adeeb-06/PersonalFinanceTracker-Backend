@@ -62,7 +62,7 @@ const getIncomeCategories = async (req: Request, res: Response) => {
     }
 
     const categories = await CategoryService.getIncomeCategories(userEmail);
-    console.log(categories);
+
     res.status(200).json({
       success: true,
       message: "Income categories retrieved successfully",
@@ -135,7 +135,7 @@ const getCategoryAnalytics = async (req: Request, res: Response) => {
       throw new Error("Category not found");
     }
 
-    console.log(categoryData);
+  
 
     for (const transaction of categoryData?.transactions) {
       let transactionData;

@@ -18,7 +18,7 @@ const getAllCategories = async (userEmail: string) => {
 
 const getIncomeCategories = async (userEmail: string) => {
   const categories = await CategoryModel.find({ userEmail, type: "income" });
-  console.log(categories, "ser");
+
   return categories;
 };
 

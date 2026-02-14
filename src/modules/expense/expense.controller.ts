@@ -3,6 +3,7 @@ import ExpenseModel from "./expense.model";
 import User from "../user/user.model";
 import BudgetModel from "../budget/budget.model";
 import CategoryModel from "../categories/categories.model";
+import { ObjectId } from "mongodb";
 
 interface ExpenseReq extends Request {
   body: {
@@ -25,7 +26,6 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
 
   const month = dateObj.getMonth() + 1;
   const year = dateObj.getFullYear();
-  console.log(month, year, "month");
 
   const dateString = `${month}/${year}`;
 
@@ -45,17 +45,16 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       month: dateString,
     });
 
-    if(budgetDeduction) {
+    if (budgetDeduction) {
       await BudgetModel.findOneAndUpdate(
         { userEmail, month: dateString },
         {
           $inc: {
             spent: amount,
-            
           },
-          $set:{
+          $set: {
             remaining: budgetDeduction.amount - amount,
-          }
+          },
         },
       );
     }
@@ -178,12 +177,80 @@ export const getTotalExpenseByMonth = async (req: Request, res: Response) => {
     ];
 
     res.status(200).json({
-      total:totalExpense,
+      total: totalExpense,
       monthNames: monthNames[monthNum - 1],
       monthNumber: monthNum,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error getting expense data" });
+  }
+};
+
+export const getExpenseById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const expense = await ExpenseModel.findById(id);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+    res.status(200).json(expense);
+  } catch (error) {
+    res.status(500).json({ message: "Error getting expense data" });
+  }
+};
+
+export const updateExpense = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { amount, date, time, category, description } = req.body;
+  try {
+    const expense = await ExpenseModel.findById(id);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    expense.amount = amount;
+    expense.date = date;
+    expense.time = time;
+    expense.category = category;
+    expense.description = description;
+
+    const dateObj = new Date(date);
+    const month = dateObj.getMonth() + 1;
+    const year = dateObj.getFullYear();
+    const dateString = `${month}/${year}`;
+
+    const budgetDeduction = await BudgetModel.findOne({
+      userEmail: expense.userEmail,
+      month: dateString,
+    });
+
+    await BudgetModel.findOneAndUpdate(
+      { userEmail: expense.userEmail, month: dateString },
+      {
+        $inc: {
+          spent: amount,
+        },
+        $set: {
+          remaining: budgetDeduction.amount - amount,
+        },
+      },
+    );
+
+    await User.findOneAndUpdate(
+      { email: expense.userEmail },
+      {
+        $inc: {
+          balance: -amount,
+        },
+      },
+    );
+
+
+    await expense.save();
+    res.status(201).json({ message: "Expense updated successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error updating expense" });
   }
 };
