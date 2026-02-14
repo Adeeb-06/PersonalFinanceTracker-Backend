@@ -11,6 +11,7 @@ import balanceRoute from "./modules/balance/balance.route";
 import expenseRoute from "./modules/expense/expense.routes";
 import budgetRoute from "./modules/budget/budget.route";
 import { CategoryRoutes } from "./modules/categories/categories.routes";
+import dashboardRouter from "./modules/dashboard/dashbaord.routes";
 
 connectToDatabase();
 
@@ -39,6 +40,7 @@ app.use("/api/balance", balanceRoute);
 app.use("/api/expense", expenseRoute);
 app.use("/api/budget", budgetRoute);
 app.use("/api/categories", CategoryRoutes);
+app.use("/api/dashboard", dashboardRouter);
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
