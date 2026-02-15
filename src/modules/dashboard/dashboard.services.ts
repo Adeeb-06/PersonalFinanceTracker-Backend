@@ -1,4 +1,5 @@
 import BalanceModel from "../balance/balance.model";
+import BudgetModel from "../budget/budget.model";
 import ExpenseModel from "../expense/expense.model";
 import User from "../user/user.model";
 
@@ -115,12 +116,29 @@ const getTopExpenseCategory = async (
   return { category: topCategory._id, amount: topCategory.amount };
 };
 
+const checkBudgetStatus = async({email,month,year} : {email:string,month:number,year:number})=>{
+    const budget = await BudgetModel.findOne({
+        userEmail:email,
+        data:{
+            $gte: new Date(year, month - 1, 1),
+            $lt: new Date(year, month, 1),
+        }
+    })
+    if(!budget){
+        return {status:false}
+    }
+    const isBudgetExceeded = budget?.amount < budget?.spent
+    
+    return {status: isBudgetExceeded}
+}
+
 const DashboardService = {
   getBalance,
   getTotalIncomeByMonth,
   getTotalExpenseByMonth,
   getTotalTransactionByMonth,
   getTopExpenseCategory,
+  checkBudgetStatus
 };
 
 export default DashboardService;
