@@ -116,21 +116,97 @@ const getTopExpenseCategory = async (
   return { category: topCategory._id, amount: topCategory.amount };
 };
 
-const checkBudgetStatus = async({email,month,year} : {email:string,month:number,year:number})=>{
-    const budget = await BudgetModel.findOne({
-        userEmail:email,
-        data:{
-            $gte: new Date(year, month - 1, 1),
-            $lt: new Date(year, month, 1),
-        }
-    })
-    if(!budget){
-        return {status:false}
-    }
-    const isBudgetExceeded = budget?.amount < budget?.spent
-    
-    return {status: isBudgetExceeded}
-}
+const checkBudgetStatus = async ({
+  email,
+  month,
+  year,
+}: {
+  email: string;
+  month: number;
+  year: number;
+}) => {
+  const budget = await BudgetModel.findOne({
+    userEmail: email,
+    data: {
+      $gte: new Date(year, month - 1, 1),
+      $lt: new Date(year, month, 1),
+    },
+  });
+  if (!budget) {
+    return { status: false };
+  }
+  const isBudgetExceeded = budget?.amount < budget?.spent;
+
+  return { status: isBudgetExceeded };
+};
+
+const incomeExpenseChart = async ({ email }: { email: string }) => {
+  const getYear = new Date().getFullYear();
+  const res = await BalanceModel.aggregate([
+    {
+      $match: {
+        userEmail: email,
+        date: {
+          $gte: new Date(getYear, 0, 1),
+          $lt: new Date(getYear + 1, 0, 1), // safer
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $month: "$date" },
+        totalIncome: { $sum: "$amount" },
+      },
+    },
+    {
+      $sort: { _id: 1 }, // sort Jan → Dec
+    },
+  ]);
+
+  const expense = await ExpenseModel.aggregate([
+    {
+      $match: {
+        userEmail: email,
+        date: {
+          $gte: new Date(getYear, 0, 1),
+          $lt: new Date(getYear + 1, 0, 1), // safer
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $month: "$date" },
+        totalExpense: { $sum: "$amount" },
+      },
+    },
+    {
+      $sort: { _id: 1 }, // sort Jan → Dec
+    },
+  ]);
+
+  const incomeMap: Record<number, number> = {};
+  const expenseMap: Record<number, number> = {};
+
+  res.forEach((item) => {
+    incomeMap[item._id] = item.totalIncome;
+  });
+  expense.forEach((item) => {
+    expenseMap[item._id] = item.totalExpense;
+  });
+
+const monthNames = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+  const finalData = monthNames.map((month, index) => ({
+    month,
+    income: incomeMap[index + 1] || 0,
+    expense: expenseMap[index + 1] || 0,
+  }));
+
+  return finalData;
+};
 
 const DashboardService = {
   getBalance,
@@ -138,7 +214,8 @@ const DashboardService = {
   getTotalExpenseByMonth,
   getTotalTransactionByMonth,
   getTopExpenseCategory,
-  checkBudgetStatus
+  checkBudgetStatus,
+  incomeExpenseChart
 };
 
 export default DashboardService;
