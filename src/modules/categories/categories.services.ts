@@ -28,24 +28,63 @@ const getExpenseCategories = async (userEmail: string) => {
 };
 
 const deleteCategory = async (id: string) => {
-  const category = await CategoryModel.findByIdAndDelete(id);
-  const otherCategory = await CategoryModel.findOne({
+  const categoryData = await CategoryModel.findById(id);
+
+  if (!categoryData) {
+    throw new Error("Category not found");
+  }
+
+  const transactions = categoryData.transactions || [];
+
+  let otherCategoryIncome = await CategoryModel.findOne({
     name: "Other",
+    type: "income",
+    userEmail: categoryData.userEmail,
   });
-  if (!otherCategory) {
-    await CategoryModel.create({
+
+  let otherCategoryExpense = await CategoryModel.findOne({
+    name: "Other",
+    type: "expense",
+    userEmail: categoryData.userEmail,
+  });
+
+  if (!otherCategoryIncome) {
+    otherCategoryIncome = await CategoryModel.create({
       name: "Other",
-      type: category?.type,
-      userEmail: category?.userEmail,
+      type: "income",
+      userEmail: categoryData.userEmail,
+      transactions: [],
     });
   }
-  await ExpenseModel.updateMany({ category: id }, { category: "Other" });
-  await otherCategory?.transactions.push(...category?.transactions);
-  await otherCategory?.save();
-  await BalanceModel.updateMany({ category: id }, { category: "Other" });
-  await otherCategory?.transactions.push(...category?.transactions);
-  await otherCategory?.save();
+
+  if (!otherCategoryExpense) {
+    otherCategoryExpense = await CategoryModel.create({
+      name: "Other",
+      type: "expense",
+      userEmail: categoryData.userEmail,
+      transactions: [],
+    });
+  }
+
+  await ExpenseModel.updateMany(
+    { category: categoryData.name },
+    { category: "Other" }
+  );
+
+  await BalanceModel.updateMany(
+    { category: categoryData.name },
+    { category: "Other" }
+  );
+
+  otherCategoryExpense.transactions.push(...transactions);
+  await otherCategoryExpense.save();
+
+  otherCategoryIncome.transactions.push(...transactions);
+  await otherCategoryIncome.save();
+
+  await CategoryModel.findByIdAndDelete(id);
 };
+
 
 export const CategoryService = {
   createCategory,
