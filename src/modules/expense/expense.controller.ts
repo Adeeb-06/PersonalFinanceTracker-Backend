@@ -102,9 +102,32 @@ export const getExpense = async (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
 
+  const  {from , to , search} = req.query
+
+  const query : any = {userEmail}
+
+  if(from ){
+    const startDate = new Date(from as string);
+    startDate.setHours(0, 0, 0, 0);
+      query.date = { ...query.date, $gte: startDate };
+  }
+
+  if(to){
+    const endDate = new Date(to as string);
+    endDate.setHours(23, 59, 59, 999);
+    query.date = { ...query.date, $lte: endDate };
+  }
+
+  if(search){
+    query.$or = [
+      { category: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ]
+  }
+
   try {
     const [expenseData, total] = await Promise.all([
-      ExpenseModel.find({ userEmail })
+      ExpenseModel.find(query)
         .select("-userEmail")
         .sort({ date: 1 })
         .skip(skip)

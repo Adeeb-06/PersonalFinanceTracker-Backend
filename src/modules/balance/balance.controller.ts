@@ -68,9 +68,16 @@ export const getIncomeData = async (req: Request, res: Response) => {
     const skip = (pages - 1) * limit;
     console.log("User Email:", userEmail);
 
-    const { from, to } = req.query;
+    const { from, to, search } = req.query;
 
     const query: any = { userEmail, type: "income" };
+
+    if (search) {
+      query.$or = [
+        { category: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
 
     if (from) {
       const startDate = new Date(from as string);
