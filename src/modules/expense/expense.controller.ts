@@ -44,6 +44,12 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       userEmail,
       month: dateString,
     });
+      if (budgetDeduction) {
+      if (budgetDeduction.remaining < 0) {
+        budgetDeduction.remaining = 0;
+        await budgetDeduction.save();
+      }
+    }
 
     if (budgetDeduction) {
       await BudgetModel.findOneAndUpdate(
@@ -59,12 +65,7 @@ export const addExpense = async (req: ExpenseReq, res: Response) => {
       );
     }
 
-    if (budgetDeduction) {
-      if (budgetDeduction.remaining < 0) {
-        budgetDeduction.remaining = 0;
-        await budgetDeduction.save();
-      }
-    }
+  
 
     if (user.balance < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
@@ -285,7 +286,7 @@ export const deletExpense = async (req: Request, res: Response) => {
             spent: -expense.amount,
           },
           $set: {
-            remaining: budgetDeduction.amount + expense.amount,
+            remaining: budgetDeduction.remaining - expense.amount,
           },
         },
       );

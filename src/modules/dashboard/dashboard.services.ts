@@ -208,6 +208,16 @@ const monthNames = [
   return finalData;
 };
 
+const savings = async({email , month , year}:{email:string,month:number,year:number})=>{
+  const totalIncome = await getTotalIncomeByMonth(email,month,year)
+  const totalExpense = await getTotalExpenseByMonth(email,month,year)
+  const passiveSavings = totalIncome - totalExpense
+  const savingsRate = ((passiveSavings / totalIncome) * 100).toFixed(2)
+
+  return { passiveSavings , savingsRate }
+}
+
+
 const DashboardService = {
   getBalance,
   getTotalIncomeByMonth,
@@ -215,7 +225,8 @@ const DashboardService = {
   getTotalTransactionByMonth,
   getTopExpenseCategory,
   checkBudgetStatus,
-  incomeExpenseChart
+  incomeExpenseChart,
+  savings
 };
 
 export default DashboardService;

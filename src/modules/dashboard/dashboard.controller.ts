@@ -36,6 +36,8 @@ export const getDashboardData = async (req: Request, res: Response) => {
 
     const incomeExpenseChart = await DashboardService.incomeExpenseChart({email})
 
+    const savings = await DashboardService.savings({email,month:Number(month),year:Number(year)})
+
     return res
       .status(200)
       .json({
@@ -46,7 +48,8 @@ export const getDashboardData = async (req: Request, res: Response) => {
         topExpenseCategory,
         surplusPercentage,
         budgetStatus,
-        incomeExpenseChart
+        incomeExpenseChart,
+        savings
       });
   } catch (error) {
     console.log(error);
