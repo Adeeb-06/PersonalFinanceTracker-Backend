@@ -10,6 +10,9 @@ SavingRouter.put(
   verifyAuth,
   SavingsController.addMoneyToSavings,
 );
-SavingRouter.get("/get/:email",verifyAuth,SavingsController.getSavingsData)
+SavingRouter.get("/get/:email", verifyAuth, SavingsController.getSavingsData);
+SavingRouter.get("/get/:savingsId/:email", verifyAuth, SavingsController.getSavingsById);
+SavingRouter.put("/update/:id", verifyAuth, SavingsController.updateSavings);
+SavingRouter.delete("/delete/:id", verifyAuth, SavingsController.deleteSavings);
 
 export default SavingRouter;
