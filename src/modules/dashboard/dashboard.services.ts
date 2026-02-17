@@ -125,19 +125,18 @@ const checkBudgetStatus = async ({
   month: number;
   year: number;
 }) => {
+ const query = `${month}/${year}`
   const budget = await BudgetModel.findOne({
     userEmail: email,
-    data: {
-      $gte: new Date(year, month - 1, 1),
-      $lt: new Date(year, month, 1),
-    },
+    month: query
   });
   if (!budget) {
     return { status: false };
   }
-  const isBudgetExceeded = budget?.amount < budget?.spent;
+  const isWithBudget = budget?.amount >= budget?.spent;
 
-  return { status: isBudgetExceeded };
+
+  return { status: isWithBudget };
 };
 
 const incomeExpenseChart = async ({ email }: { email: string }) => {

@@ -5,7 +5,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
   try {
     const { email } = req.params as { email: string };
     const { month, year } = req.query;
-
+console.log(month , year , "dash")
     const balance = await DashboardService.getBalance(email);
     const totalIncome = await DashboardService.getTotalIncomeByMonth(
       email,
@@ -37,7 +37,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
     const incomeExpenseChart = await DashboardService.incomeExpenseChart({email})
 
     const savings = await DashboardService.savings({email,month:Number(month),year:Number(year)})
-
+console.log(budgetStatus)
     return res
       .status(200)
       .json({
