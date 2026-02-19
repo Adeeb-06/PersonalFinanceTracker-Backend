@@ -1,35 +1,21 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { getToken } from "next-auth/jwt";
 
 interface AuthenticatedRequest extends Request {
-  userEmail?: string;
-  userId?: string;
+  userEmail?: string | null | undefined;
+  userId?: string | unknown | undefined;
 }
 
-export const verifyAuth = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const verifyAuth = async (req:AuthenticatedRequest, res:Response, next:NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: "No token provided" });
-    }
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
 
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "Invalid token format" });
-    }
-
-    const payload = jwt.verify(token, process.env.NEXTAUTH_SECRET!) as any;
-
-    req.userEmail = payload.email;
-    req.userId = payload.id;
-
+    req.userEmail = token.email;
+    req.userId = token.id;
     next();
   } catch (err) {
     console.error("verifyAuth Error:", err);
-    return res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Invalid token" });
   }
 };
