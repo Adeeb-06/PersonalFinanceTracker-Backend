@@ -17,11 +17,11 @@ export const verifyAuth = async (
     console.log("Headers:", JSON.stringify(req.headers));
     console.log("Cookies:", req.cookies);
 
+    const sessionToken = req.headers.authorization?.split(" ")[1];
+
+
     console.log(req)
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const token = jwt.verify(sessionToken as string, process.env.NEXTAUTH_SECRET!)
 
     console.log("Token retrieved:", token);
 
@@ -30,8 +30,8 @@ export const verifyAuth = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    req.userEmail = token.email as string;
-    req.userId = token.id as string;
+    req.userEmail = (token as any).email as string;
+    req.userId = (token as any).id as string;
     next();
   } catch (error) {
     console.error("verifyAuth Error:", error);
