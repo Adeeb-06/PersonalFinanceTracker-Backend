@@ -13,7 +13,6 @@ export const verifyAuth = async (
   next: NextFunction,
 ) => {
   try {
-    // Debugging logs
     console.log("verifyAuth middleware called");
     console.log("Headers:", JSON.stringify(req.headers));
     console.log("Cookies:", req.cookies);
