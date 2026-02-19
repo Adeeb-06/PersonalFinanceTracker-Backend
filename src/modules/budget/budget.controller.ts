@@ -70,6 +70,7 @@ export const getBudgetByMonth = async (req: Request, res: Response) => {
         const budgetData = await BudgetModel.findOne({ userEmail, month });
         res.status(200).json(budgetData);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Error getting budget data" });
     }
 };

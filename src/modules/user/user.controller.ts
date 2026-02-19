@@ -36,9 +36,9 @@ export const getUserByEmail = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ exists: false});
     }
-    res.status(200).json(user);
+    res.status(200).json({exists: true});
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server Error , Get User By Email" });
