@@ -19,7 +19,7 @@ export const userExists = async (req: Request, res: Response) => {
   if (!user) {
     return res.status(404).json({ exists: false });
   }
-  res.status(200).json(user);
+  res.status(200).json({exists: true});
 }
 
 
