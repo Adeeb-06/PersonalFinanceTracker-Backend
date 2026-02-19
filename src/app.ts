@@ -21,16 +21,17 @@ const port: Number = 9000;
 
 app.use(cookiesParser());
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: ["http://localhost:3000", process.env.FRONTEND_URL || ""],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: any, res: any) => {
   res.send("Hello World!");
