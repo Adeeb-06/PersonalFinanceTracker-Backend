@@ -21,7 +21,6 @@ export const verifyAuth = async (
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
-      secureCookie: process.env.NODE_ENV === "production",
     });
 
     console.log("Token retrieved:", token);
