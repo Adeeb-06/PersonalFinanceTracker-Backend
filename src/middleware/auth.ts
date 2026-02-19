@@ -1,18 +1,21 @@
-import { NextFunction, Request, Response } from "express";
-import { getToken } from "next-auth/jwt";
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
 interface AuthenticatedRequest extends Request {
-  userEmail?: string | null | undefined;
-  userId?: string | unknown | undefined;
+  userEmail?: string;
+  userId?: string;
 }
 
-export const verifyAuth = async (req:AuthenticatedRequest, res:Response, next:NextFunction) => {
+export const verifyAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
 
-    req.userEmail = token.email;
-    req.userId = token.id;
+    const token = authHeader.split(" ")[1]; // Bearer <token>
+    const payload = jwt.verify(token, process.env.NEXTAUTH_SECRET!);
+
+    req.userEmail = (payload as any).email;
+    req.userId = (payload as any).id;
     next();
   } catch (err) {
     console.error("verifyAuth Error:", err);
