@@ -17,6 +17,7 @@ export const verifyAuth = async (
     console.log("Headers:", JSON.stringify(req.headers));
     console.log("Cookies:", req.cookies);
 
+    console.log(req)
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
