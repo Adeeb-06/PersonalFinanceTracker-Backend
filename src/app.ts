@@ -23,7 +23,7 @@ app.use(cookiesParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", process.env.FRONTEND_URL || ""],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),
@@ -51,3 +51,4 @@ if (require.main === module) {
 }
 
 export default app;
+  
