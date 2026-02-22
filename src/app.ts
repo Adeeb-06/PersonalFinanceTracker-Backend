@@ -45,18 +45,14 @@ app.use("/api/categories", CategoryRoutes);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/savings", SavingRouter);
 
-// if (require.main === module) {
-//   app.listen(port, () => {
-//     console.log(`Server is running at http://localhost:${port}`);
-//   });
-// }
-
-// export default app;
-
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+  });
+}
 
 export default app;
+
+
 
   
